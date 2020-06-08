@@ -201,23 +201,19 @@ namespace Pronamic\WordPress\Pay\Importer {
 			$subscription->interval        = $mp_subscription->period;
 			$subscription->interval_period = Util::to_period( $mp_subscription->period_type );
 
-			$num_periods = 1;
-
 			// Frequency.
 			if ( ! empty( $mp_subscription->limit_cycles ) && intval( $mp_subscription->limit_cycles_num ) > 0 ) {
 				$subscription->frequency = $mp_subscription->limit_cycles_num;
 
-				$num_periods = $subscription->frequency;
+				$period = new \DatePeriod( $subscription->start_date, $subscription->get_date_interval(), $subscription->frequency );
+
+				$dates = iterator_to_array( $period );
+
+				$subscription->end_date = end( $dates );
 			}
 
 			// Start, end and expiry dates.
 			$subscription->start_date = new DateTime( $mp_subscription->created_at );
-
-			$period = new \DatePeriod( $subscription->start_date, $subscription->get_date_interval(), $num_periods );
-
-			$dates = iterator_to_array( $period );
-
-			$subscription->end_date = end( $dates );
 
 			$subscription->expiry_date = clone $subscription->start_date;
 
