@@ -42,7 +42,7 @@ class AdminModule {
 	public $importer;
 
 	/**
-	 * Constructs and initalize an admin object.
+	 * Construct and initialize an admin object.
 	 *
 	 * @param Addon $addon Plugin.
 	 */
