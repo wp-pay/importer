@@ -20,7 +20,7 @@ namespace Pronamic\WordPress\Pay\Importer;
 class ImportItem {
 	/**
 	 * Item data.
-	 * 
+	 *
 	 * @var array
 	 */
 	private $data;

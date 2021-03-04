@@ -92,7 +92,7 @@ class ImportData implements \IteratorAggregate {
 	/**
 	 * Process.
 	 *
-	 * @return array
+	 * @return void
 	 */
 	public function process() {
 		\do_action( 'pronamic_pay_import_start', $this->items );
@@ -100,7 +100,11 @@ class ImportData implements \IteratorAggregate {
 		$i = 1;
 
 		foreach ( $this->items as $item ) {
-			\printf( '<strong>' . \esc_html__( 'Processing item #%d...', 'pronamic-pay-importer' ) . '</strong>' . \PHP_EOL, $i );
+			\printf(
+				/* translators: %d: processing item index */
+				'<strong>' . esc_html__( 'Processing item #%d...', 'pronamic-pay-importer' ) . '</strong>' . \PHP_EOL,
+				esc_html( $i )
+			);
 
 			$item->process();
 

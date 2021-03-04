@@ -18,9 +18,33 @@
 	<exclude-pattern>wordpress/*</exclude-pattern>
 	<exclude-pattern type="relative">^wp-content/*</exclude-pattern>
 
+	<rule ref="Generic.Files.OneObjectStructurePerFile.MultipleFound">
+		<exclude-pattern>src/ImportActions.php</exclude-pattern>
+	</rule>
+
 	<rule ref="VariableAnalysis"/>
 
 	<rule ref="PHPCompatibilityWP"/>
+
+	<rule ref="PHPCompatibility.FunctionDeclarations.NewClosure.ThisFoundOutsideClass">
+		<exclude-pattern>src/i18n-make-pot.php</exclude-pattern>
+	</rule>
+
+	<rule ref="Squiz.Commenting.ClassComment.Missing">
+		<exclude-pattern>src/ImportActions.php</exclude-pattern>
+	</rule>
+
+	<rule ref="Squiz.Commenting.FunctionComment.Missing">
+		<exclude-pattern>src/ImportActions.php</exclude-pattern>
+	</rule>
+
+	<rule ref="VariableAnalysis.CodeAnalysis.VariableAnalysis.UndefinedVariable">
+		<exclude-pattern>views/page-importer-process.php</exclude-pattern>
+	</rule>
+
+	<rule ref="VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable">
+		<exclude-pattern>src/ImportActions.php</exclude-pattern>
+	</rule>
 
 	<rule ref="WordPress">
 		<exclude name="WordPress.DB.SlowDBQuery.slow_db_query_meta_key"/>
@@ -33,5 +57,6 @@
 
 	<rule ref="WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_putenv">
 		<exclude-pattern>tests/bootstrap.php</exclude-pattern>
+
 	</rule>
 </ruleset>

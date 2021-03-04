@@ -10,7 +10,6 @@
 
 namespace Pronamic\WordPress\Pay\Importer\Admin;
 
-
 use Pronamic\WordPress\Pay\Importer\Addon;
 use Pronamic\WordPress\Pay\Importer\ImportActions;
 use Pronamic\WordPress\Pay\Importer\ImportData;
@@ -50,10 +49,10 @@ class AdminImporter {
 		if (
 			\wp_verify_nonce( \filter_input( \INPUT_POST, 'pronamic-pay-importer-nonce', \FILTER_SANITIZE_STRING ), 'pronamic-pay-importer-import' )
 				&&
-			isset( $_FILES['pronamic-pay-importer-file'] )
+			isset( $_FILES['pronamic-pay-importer-file']['type'] )
 		) {
 			if ( 'text/csv' !== $_FILES['pronamic-pay-importer-file']['type'] ) {
-				\wp_die( __( 'Uploaded file is not a CSV file.', 'pronamic-pay-importer' ) );
+				\wp_die( \esc_html__( 'Uploaded file is not a CSV file.', 'pronamic-pay-importer' ) );
 			}
 
 			require __DIR__ . '/../../views/page-importer-process.php';
@@ -67,11 +66,12 @@ class AdminImporter {
 	/**
 	 * Maybe import.
 	 *
-	 * @return array
+	 * @param string $path Import file path.
+	 * @return void
 	 */
 	private function import_file( $path ) {
 		if ( ! is_readable( $path ) ) {
-			\wp_die( __( 'Import file could not be read.', 'pronamic-pay-importer' ) );
+			\wp_die( \esc_html__( 'Import file could not be read.', 'pronamic-pay-importer' ) );
 		}
 
 		$file = \file( $path, \FILE_IGNORE_NEW_LINES | \FILE_SKIP_EMPTY_LINES );
@@ -92,8 +92,6 @@ class AdminImporter {
 
 		$data = new ImportData( $data );
 
-		$result = $data->process();
-
-		return $result;
+		$data->process();
 	}
 }

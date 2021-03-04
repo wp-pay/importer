@@ -166,7 +166,7 @@ class AdminModule {
 				'menu_title' => __( 'Import', 'pronamic_ideal' ),
 				'capability' => 'manage_options',
 				'menu_slug'  => 'pronamic_pay_importer',
-				'function' => function () {
+				'function'   => function () {
 					// Importer.
 					$this->importer = new AdminImporter( $this->addon );
 

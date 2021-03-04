@@ -54,11 +54,20 @@ namespace Pronamic\WordPress\Pay\Importer {
 			\add_action( self::ACTION_PREFIX . 'start', array( $this, 'import_start' ), 10, 1 );
 		}
 
+		/**
+		 * Import start.
+		 *
+		 * @param array $items Items to import.
+		 * @retun void
+		 */
 		public function import_start( $items ) {
 			// Sync Mollie customers <> users.
 			$mollie_cli = new CLI();
 
-			echo '- ' . __( 'Synchroinze Mollie customers', 'pronamic-pay-importer' ) . \PHP_EOL;
+			\printf(
+				'- %s' . \PHP_EOL,
+				\esc_html__( 'Synchronize Mollie customers', 'pronamic-pay-importer' )
+			);
 
 			try {
 				$mollie_cli->wp_cli_customers_synchronize( array(), array() );
@@ -68,7 +77,10 @@ namespace Pronamic\WordPress\Pay\Importer {
 
 			echo \PHP_EOL;
 
-			echo '- ' . __( 'Connect Mollie customers to WordPress users', 'pronamic-pay-importer' ) . \PHP_EOL;
+			\printf(
+				'- %s' . \PHP_EOL,
+				\esc_html__( 'Connect Mollie customers to WordPress users', 'pronamic-pay-importer' )
+			);
 
 			try {
 				$mollie_cli->wp_cli_customers_connect_wp_users( array(), array() );
@@ -84,7 +96,6 @@ namespace Pronamic\WordPress\Pay\Importer {
 		 *
 		 * @param string $subscription_id Subscription ID.
 		 * @param array  $data            Item data.
-		 *
 		 * @return void
 		 */
 		public function memberpress_subscription_id( $subscription_id, $data ) {
@@ -93,17 +104,21 @@ namespace Pronamic\WordPress\Pay\Importer {
 			}
 
 			if ( ! \class_exists( 'MeprSubscription' ) ) {
-				\printf( '-' . __( 'Could not execute action for `memberpress_subscription_id` because MemberPress seems not available. ', 'pronamic-pay-importer' ) . \PHP_EOL );
+				\printf(
+					'- %s' . \PHP_EOL,
+					\esc_html__( 'Could not execute action for `memberpress_subscription_id` because MemberPress seems not available. ', 'pronamic-pay-importer' )
+				);
 
-				return $data;
+				return;
 			}
 
 			$mp_subscription = new MeprSubscription( $subscription_id );
 
 			if ( ! MeprSubscription::exists( $subscription_id ) ) {
 				\printf(
-					__( 'MemberPress subscription `%1$s` does not exist.', 'pronamic-pay-importer' ) . \PHP_EOL,
-					$subscription_id
+					/* translators: 1: MemberPress subscription ID */
+					\esc_html__( 'MemberPress subscription `%1$s` does not exist.', 'pronamic-pay-importer' ) . \PHP_EOL,
+					\esc_html( $subscription_id )
 				);
 
 				\esc_html_e( 'Skipping...', 'pronamic-pay-importer' );
@@ -111,7 +126,7 @@ namespace Pronamic\WordPress\Pay\Importer {
 				return;
 			}
 
-			$mp_product      = new MeprProduct( $mp_subscription->product_id );
+			$mp_product = new MeprProduct( $mp_subscription->product_id );
 
 			if ( $mp_product->is_one_time_payment() ) {
 				\esc_html_e( 'MemberPress subscription product is a one-time payment.', 'pronamic-pay-importer' );
@@ -129,9 +144,11 @@ namespace Pronamic\WordPress\Pay\Importer {
 			if ( null === $subscription ) {
 				$subscription = new Subscription();
 
-				$log = '+ ' . __( 'Create Pronamic Pay subscription #%1$s', 'pronamic-pay-importer' ) . \PHP_EOL;
+				/* translators: 1: subscription ID */
+				$log = '+ ' . __( 'Create Pronamic Pay subscription #%1$s', 'pronamic-pay-importer' );
 			} else {
-				$log = '- ' . __( 'Update Pronamic Pay subscription #%1$s', 'pronamic-pay-importer' ) . \PHP_EOL;
+				/* translators: 1: subscription ID */
+				$log = '- ' . __( 'Update Pronamic Pay subscription #%1$s', 'pronamic-pay-importer' );
 			}
 
 			// Subscription info.
@@ -193,7 +210,7 @@ namespace Pronamic\WordPress\Pay\Importer {
 					$mp_subscription->total,
 					MemberPress::get_currency(),
 					$mp_subscription->tax_amount,
-					$mp_subscription->tax_rate,
+					$mp_subscription->tax_rate
 				)
 			);
 
@@ -231,7 +248,10 @@ namespace Pronamic\WordPress\Pay\Importer {
 
 			$subscription->save();
 
-			printf( $log, \esc_html( $subscription->get_id() ) );
+			printf(
+				'%s' . \PHP_EOL,
+				esc_html( sprintf( $log, $subscription->get_id() ) )
+			);
 
 			$subscription = \get_pronamic_subscription( $subscription->get_id() );
 
@@ -244,7 +264,8 @@ namespace Pronamic\WordPress\Pay\Importer {
 				$subscription->set_meta( 'mollie_customer_id', $mollie_customer_id );
 
 				\printf(
-					'- ' . __( 'Add Mollie Customer ID `%1$s` to subscription `%2$s`', 'pronamic-pay-importer' ) . \PHP_EOL,
+					/* translators: 1: Mollie customer ID, 2: subscription ID */
+					'- ' . \esc_html__( 'Add Mollie Customer ID `%1$s` to subscription `%2$s`', 'pronamic-pay-importer' ) . \PHP_EOL,
 					\esc_html( $mollie_customer_id ),
 					\esc_html( $subscription->get_id() )
 				);
@@ -262,7 +283,7 @@ namespace {
 		}
 
 		public static function log( $log ) {
-			echo $log . \PHP_EOL;
+			echo esc_html( $log ) . \PHP_EOL;
 		}
 
 		public static function error( $error ) {

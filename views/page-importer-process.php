@@ -20,9 +20,15 @@ if ( ! defined( 'WPINC' ) ) {
 <div class="wrap">
 	<h1><?php \esc_html_e( 'Importing', 'pronamic-pay-importer' ); ?></h1>
 
-	<pre><?php
+	<pre>
+	<?php
 
-		$this->import_file( $_FILES['pronamic-pay-importer-file']['tmp_name'] );
+	if ( isset( $_FILES['pronamic-pay-importer-file']['tmp_name'] ) ) :
 
-	?></pre>
+		$this->import_file( sanitize_text_field( \wp_unslash( $_FILES['pronamic-pay-importer-file']['tmp_name'] ) ) );
+
+	endif;
+
+	?>
+	</pre>
 </div>

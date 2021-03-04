@@ -69,24 +69,29 @@ class ImportFilters {
 	 */
 	public function memberpress_subscription_id( $data, $subscription_id ) {
 		if ( ! \class_exists( 'MeprSubscription' ) ) {
-			\printf( '-' . __( 'Could not filter `memberpress_subscription_id` because MemberPress seems not available. ', 'pronamic-pay-importer' ) . \PHP_EOL );
+			\printf(
+				'- %s ' . \PHP_EOL,
+				esc_html__( 'Could not filter `memberpress_subscription_id` because MemberPress seems not available. ', 'pronamic-pay-importer' )
+			);
 
 			return $data;
 		}
 
 		$mp_subscription = new MeprSubscription( $subscription_id );
 
+		/* translators: 1: import data user ID, 2: MemberPress subscription user ID, 3: MemberPress subscription ID */
 		$format = __( 'Update item `user_id` from `%1$s` to `%2$s` (MemberPress subscription #%3$s)', 'pronamic-pay-importer' );
 
 		if ( empty( $data['user_id'] ) ) {
+			/* translators: 2: MemberPress subscription user ID, 3: MemberPress subscription ID */
 			$format = __( 'Add item `user_id` with value `%2$s` (from MemberPress subscription #%3$s)', 'pronamic-pay-importer' );
 		}
 
 		printf(
-			'- ' . $format . \PHP_EOL,
+			esc_html( '- ' . $format . \PHP_EOL ),
 			\esc_html( $data['user_id'] ),
 			\esc_html( $mp_subscription->user_id ),
-			\esc_html( $subscription_id ),
+			\esc_html( $subscription_id )
 		);
 
 		$data['user_id'] = $mp_subscription->user_id;
