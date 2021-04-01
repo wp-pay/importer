@@ -20,8 +20,9 @@ if ( ! defined( 'WPINC' ) ) {
 <div class="wrap">
 	<h1><?php \esc_html_e( 'Importing', 'pronamic-pay-importer' ); ?></h1>
 
-	<pre>
 	<?php
+
+	echo '<pre>';
 
 	if ( isset( $_FILES['pronamic-pay-importer-file']['tmp_name'] ) ) :
 
@@ -29,6 +30,7 @@ if ( ! defined( 'WPINC' ) ) {
 
 	endif;
 
+	echo '</pre>';
+
 	?>
-	</pre>
 </div>
