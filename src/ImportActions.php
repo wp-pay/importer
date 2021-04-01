@@ -10,18 +10,24 @@
 
 namespace Pronamic\WordPress\Pay\Importer {
 
+	use DateTimeImmutable;
 	use MeprProduct;
 	use MeprSubscription;
 	use Pronamic\WordPress\DateTime\DateTime;
 	use Pronamic\WordPress\Money\TaxedMoney;
 	use Pronamic\WordPress\Pay\Address;
 	use Pronamic\WordPress\Pay\ContactName;
+	use Pronamic\WordPress\Pay\Core\PaymentMethods;
 	use Pronamic\WordPress\Pay\Core\Util;
 	use Pronamic\WordPress\Pay\Customer;
 	use Pronamic\WordPress\Pay\Extensions\MemberPress\MemberPress;
 	use Pronamic\WordPress\Pay\Extensions\MemberPress\SubscriptionStatuses;
 	use Pronamic\WordPress\Pay\Gateways\Mollie\CLI;
 	use Pronamic\WordPress\Pay\Subscriptions\Subscription;
+	use Pronamic\WordPress\Pay\Subscriptions\SubscriptionHelper;
+	use Pronamic\WordPress\Pay\Subscriptions\SubscriptionInterval;
+	use Pronamic\WordPress\Pay\Subscriptions\SubscriptionPhase;
+	use Pronamic\WordPress\Pay\Subscriptions\SubscriptionStatus;
 	use ReflectionClass;
 	use WP_User;
 
@@ -44,6 +50,7 @@ namespace Pronamic\WordPress\Pay\Importer {
 		public function __construct() {
 			$fields = array(
 				'memberpress_subscription_id',
+				'subscription_id',
 			);
 
 			// Add actions.
@@ -272,6 +279,194 @@ namespace Pronamic\WordPress\Pay\Importer {
 			}
 
 			$data['subscription_id'] = $subscription->get_id();
+		}
+
+		/**
+		 * Subscription.
+		 *
+		 * @param string $subscription_id Subscription ID.
+		 * @param array  $data            Item data.
+		 * @return void
+		 */
+		public function subscription_id( $subscription_id, $data ) {
+			$subscription = null;
+
+			if ( ! empty( $subscription_id ) ) {
+				$subscription = \get_pronamic_subscription( $subscription_id );
+			}
+
+			$source = \array_key_exists( 'source', $data ) ? $data['source'] : 'import';
+			$source_id = null;
+
+			if ( null === $subscription && \array_key_exists( 'source_id', $data ) ) {
+				$source_id = $data['source_id'];
+
+				$subscriptions = \get_pronamic_subscriptions_by_source( $source, $source_id );
+
+				if ( ! empty( $subscriptions ) ) {
+					$subscription = \array_shift( $subscriptions );
+				}
+			}
+
+			if ( null === $subscription ) {
+				$subscription = new Subscription();
+
+				/* translators: 1: subscription ID */
+				$log = '+ ' . __( 'Create Pronamic Pay subscription #%1$s', 'pronamic-pay-importer' );
+			} else {
+				/* translators: 1: subscription ID */
+				$log = '- ' . __( 'Update Pronamic Pay subscription #%1$s', 'pronamic-pay-importer' );
+			}
+
+			// Subscription info.
+			$description = __( 'Subscription', 'pronamic_ideal' );
+
+			if ( \array_key_exists( 'description', $data ) ) {
+				$description = $data['description'];
+			}
+
+			$subscription->description = $description;
+
+			$subscription->set_status( SubscriptionStatus::ACTIVE );
+			$subscription->set_source( $source );
+			$subscription->set_source_id( $source_id );
+
+			// Payment method.
+			$payment_method = \array_key_exists( 'payment_method', $data ) ? $data['payment_method'] : PaymentMethods::DIRECT_DEBIT;
+
+			$subscription->payment_method = $payment_method;
+
+			// Config  ID.
+			$config_id = \array_key_exists( 'config_id', $data ) ? $data['config_id'] : null;
+
+			if ( empty( $config_id ) || ! \is_numeric( $config_id ) ) {
+				$config_id = \get_option( 'pronamic_pay_config_id' );
+
+				$data['config_id'] = $config_id;
+			}
+
+			$subscription->config_id = $config_id;
+
+			// Customer.
+			$customer = new Customer();
+			$customer->set_email( \array_key_exists( 'email', $data ) ? $data['email'] : null );
+			$customer->set_user_id( 0 );
+
+			$contact_name = new ContactName();
+
+			if ( \array_key_exists( 'user_id', $data ) ) {
+				$user = new WP_User( $data['user_id'] );
+
+				$customer->set_user_id( $data['user_id'] );
+				$customer->set_email( $user->user_email );
+
+				$contact_name->set_first_name( $user->first_name );
+				$contact_name->set_last_name( $user->last_name );
+			}
+
+			$customer->set_name( $contact_name );
+
+			$subscription->set_customer( $customer );
+
+			// Billing address.
+			$customer_email = $customer->get_email();
+
+			if ( ! empty( $customer_email ) ) {
+				$billing_address = new Address();
+				$billing_address->set_email( $customer_email );
+
+				$subscription->set_billing_address( $billing_address );
+			}
+
+			// Amount.
+			$amount = new TaxedMoney(
+				$data['amount'],
+				$data['currency']
+			);
+
+			// Phase.
+			$start_date = new \DateTimeImmutable();
+
+			$subscription_start_date = $subscription->get_start_date();
+
+			if ( null !== $subscription_start_date ) {
+				$start_date = DateTimeImmutable::createFromMutable( $subscription_start_date );
+			}
+
+			$new_phase = new SubscriptionPhase(
+				$subscription,
+				$start_date,
+				new SubscriptionInterval( $data['interval'] ),
+				$amount
+			);
+
+			if ( \array_key_exists( 'frequency', $data ) && \is_numeric( $data['frequency'] ) ) {
+				$new_phase->set_total_periods( $data['frequency'] );
+			}
+
+			$phases = $subscription->get_phases();
+
+			$first_phase = \array_shift( $phases );
+
+			if ( null !== $first_phase ) {
+				$first_phase->set_sequence_number( null );
+			}
+
+			if ( wp_json_encode( $first_phase ) !== \wp_json_encode( $new_phase ) ) {
+				foreach ( $subscription->get_phases() as $phase ) {
+					$phase->set_canceled_at( new DateTimeImmutable() );
+				}
+
+				$subscription->add_phase( $new_phase );
+			}
+
+			// Complement subscription.
+			SubscriptionHelper::complement_subscription( $subscription );
+			SubscriptionHelper::complement_subscription_dates( $subscription );
+
+			$subscription->expiry_date = $start_date;
+
+			// Save.
+			$subscription->save();
+
+			printf(
+				'%s' . \PHP_EOL,
+				esc_html( sprintf( $log, $subscription->get_id() ) )
+			);
+
+			$subscription = \get_pronamic_subscription( $subscription->get_id() );
+
+			$data['subscription_id'] = $subscription->get_id();
+
+			echo wp_json_encode( $subscription->get_json(), \JSON_PRETTY_PRINT ) . \PHP_EOL;
+
+			// Add Mollie customer ID.
+			if ( isset( $data['mollie_customer_id'] ) && ! empty( $data['mollie_customer_id'] ) ) {
+				$mollie_customer_id = $data['mollie_customer_id'];
+
+				$subscription->set_meta( 'mollie_customer_id', $mollie_customer_id );
+
+				\printf(
+					/* translators: 1: Mollie customer ID, 2: subscription ID */
+					'- ' . \esc_html__( 'Add Mollie Customer ID `%1$s` to subscription `%2$s`', 'pronamic-pay-importer' ) . \PHP_EOL,
+					\esc_html( $mollie_customer_id ),
+					\esc_html( $subscription->get_id() )
+				);
+			}
+
+			// Add Mollie mandate ID.
+			if ( isset( $data['mollie_mandate_id'] ) && ! empty( $data['mollie_mandate_id'] ) ) {
+				$mollie_mandate_id = $data['mollie_mandate_id'];
+
+				$subscription->set_meta( 'mollie_mandate_id', $mollie_mandate_id );
+
+				\printf(
+					/* translators: 1: Mollie customer ID, 2: subscription ID */
+					'- ' . \esc_html__( 'Add Mollie mandate ID `%1$s` to subscription `%2$s`', 'pronamic-pay-importer' ) . \PHP_EOL,
+					\esc_html( $mollie_mandate_id ),
+					\esc_html( $subscription->get_id() )
+				);
+			}
 		}
 	}
 }
