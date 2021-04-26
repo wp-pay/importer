@@ -65,7 +65,7 @@ namespace Pronamic\WordPress\Pay\Importer {
 		 * Import start.
 		 *
 		 * @param array $items Items to import.
-		 * @retun void
+		 * @return void
 		 */
 		public function import_start( $items ) {
 			// Sync Mollie customers <> users.
