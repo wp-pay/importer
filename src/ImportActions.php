@@ -295,7 +295,7 @@ namespace Pronamic\WordPress\Pay\Importer {
 				$subscription = \get_pronamic_subscription( $subscription_id );
 			}
 
-			$source = \array_key_exists( 'source', $data ) ? $data['source'] : 'import';
+			$source    = \array_key_exists( 'source', $data ) ? $data['source'] : 'import';
 			$source_id = null;
 
 			if ( null === $subscription && \array_key_exists( 'source_id', $data ) ) {

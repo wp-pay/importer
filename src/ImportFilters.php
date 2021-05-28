@@ -64,9 +64,9 @@ class ImportFilters {
 		$amount = $parser->parse( $amount );
 
 		if ( \array_key_exists( 'currency', $data ) ) {
-			$money  = new TaxedMoney( $amount->get_value(), $data['currency'] );
+			$money = new TaxedMoney( $amount->get_value(), $data['currency'] );
 		} else {
-			$money  = new TaxedMoney( $amount->get_value() );
+			$money = new TaxedMoney( $amount->get_value() );
 		}
 
 		$data['amount']   = $money->get_value();
@@ -191,7 +191,7 @@ class ImportFilters {
 			$gateway = Plugin::get_gateway( $config_id );
 
 			if ( null === $gateway ) {
-				printf( '- Invalid gateway provided.' . \PHP_EOL);
+				\printf( '- Invalid gateway provided.' . \PHP_EOL );
 			}
 
 			$integration = new Integration();
@@ -216,7 +216,7 @@ class ImportFilters {
 
 			$data['mollie_customer_id'] = $customer_id;
 
-			\printf( '- Create customer `%s`' . \PHP_EOL, $customer_id );
+			\printf( '- Create customer `%s`' . \PHP_EOL, \esc_html( $customer_id ) );
 
 			// Create mandate.
 			$mandate = $client->create_mandate( $customer_id, $consumer_bank_details );
@@ -231,7 +231,7 @@ class ImportFilters {
 
 			$data['mollie_mandate_id'] = $mandate_id;
 
-			\printf( '- Create mandate `%s`'. \PHP_EOL, $mandate_id );
+			\printf( '- Create mandate `%s`' . \PHP_EOL, \esc_html( $mandate_id ) );
 		}
 
 		return $data;
