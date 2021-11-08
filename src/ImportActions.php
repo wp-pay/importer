@@ -159,8 +159,7 @@ namespace Pronamic\WordPress\Pay\Importer {
 			}
 
 			// Subscription info.
-			$subscription->description = $mp_product->post_title;
-
+			$subscription->set_description( $mp_product->post_title );
 			$subscription->set_status( SubscriptionStatuses::transform( $mp_subscription->status ) );
 			$subscription->set_source( 'memberpress' );
 			$subscription->set_source_id( $subscription_id );
@@ -185,8 +184,9 @@ namespace Pronamic\WordPress\Pay\Importer {
 				return;
 			}
 
-			$subscription->payment_method = $payment_method;
-			$subscription->config_id      = $mp_gateway->settings->config_id;
+			$subscription->set_payment_method( $payment_method );
+
+			$subscription->config_id = $mp_gateway->settings->config_id;
 
 			// Customer.
 			$user = new WP_User( $data['user_id'] );
@@ -325,8 +325,7 @@ namespace Pronamic\WordPress\Pay\Importer {
 				$description = $data['description'];
 			}
 
-			$subscription->description = $description;
-
+			$subscription->set_description( $description );
 			$subscription->set_status( SubscriptionStatus::ACTIVE );
 			$subscription->set_source( $source );
 			$subscription->set_source_id( $source_id );
@@ -334,7 +333,7 @@ namespace Pronamic\WordPress\Pay\Importer {
 			// Payment method.
 			$payment_method = \array_key_exists( 'payment_method', $data ) ? $data['payment_method'] : PaymentMethods::DIRECT_DEBIT;
 
-			$subscription->payment_method = $payment_method;
+			$subscription->set_payment_method( $payment_method );
 
 			// Config  ID.
 			$config_id = \array_key_exists( 'config_id', $data ) ? $data['config_id'] : null;
